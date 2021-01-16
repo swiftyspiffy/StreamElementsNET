@@ -80,7 +80,7 @@ streamElements.Connect();
 A tests project has been included in this repository to demonstrate basic usage of the library.
 
 ### NuGet
-Available via NuGet: `Install-Package StreamElementNET
+Available via NuGet: `Install-Package [StreamElementNET](https://www.nuget.org/packages/StreamElementsNET/)`
 
 ## Libraries
 - Newtonsoft.Json - JSON parsing
