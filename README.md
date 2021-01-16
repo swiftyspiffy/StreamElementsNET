@@ -90,4 +90,4 @@ Available via NuGet: Install-Package [StreamElementNET](https://www.nuget.org/pa
  * Cole ([@swiftyspiffy](http://twitter.com/swiftyspiffy))
  
 ## License
-MIT License. &copy; 2020 Cole
+MIT License. &copy; 2021 Cole
