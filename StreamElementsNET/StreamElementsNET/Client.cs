@@ -102,6 +102,11 @@ namespace StreamElementsNET
             client.Close();
         }
 
+        public void TestMessageParsing(string message)
+        {
+            handleMessage(message);
+        }
+
         private void send(string msg)
         {
             client.Send(msg);
@@ -125,38 +130,43 @@ namespace StreamElementsNET
 
         private void Client_MessageReceived(object sender, MessageReceivedEventArgs e)
         {
-            OnReceivedRawMessage?.Invoke(client, e.Message);
+            handleMessage(e.Message);
+        }
+
+        private void handleMessage(string msg)
+        {
+            OnReceivedRawMessage?.Invoke(client, msg);
             // there's a number at the start of every message, figure out what it is, and remove it
-            var raw = e.Message;
+            var raw = msg;
             if (raw.Contains("\""))
             {
-                var number = e.Message.Split('"')[0].Substring(0, e.Message.Split('"')[0].Length - 1);
-                raw = e.Message.Substring(number.Length);
+                var number = msg.Split('"')[0].Substring(0, msg.Split('"')[0].Length - 1);
+                raw = msg.Substring(number.Length);
             }
-            if (e.Message.StartsWith("40"))
+            if (msg.StartsWith("40"))
             {
                 handleAuthentication();
                 return;
             }
-            if (e.Message.StartsWith("0{\"sid\""))
+            if (msg.StartsWith("0{\"sid\""))
             {
                 handlePingInitialization(Parsing.Internal.handleSessionMetadata(JObject.Parse(raw)));
             }
-            if (e.Message.StartsWith("42[\"authenticated\""))
+            if (msg.StartsWith("42[\"authenticated\""))
             {
                 OnAuthenticated?.Invoke(client, Parsing.Internal.handleAuthenticated(JArray.Parse(raw)));
                 return;
             }
-            if (e.Message.StartsWith("42[\"unauthorized\""))
+            if (msg.StartsWith("42[\"unauthorized\""))
             {
                 OnAuthenticationFailure?.Invoke(client, null);
             }
-            if (e.Message.StartsWith("42[\"event\",{\"_id\""))
+            if (msg.StartsWith("42[\"event\",{\"type\""))
             {
                 handleComplexObject(JArray.Parse(raw));
                 return;
             }
-            if (e.Message.StartsWith("42[\"event:update\",{\"name\""))
+            if (msg.StartsWith("42[\"event:update\",{\"name\""))
             {
                 handleSimpleUpdate(JArray.Parse(raw));
                 return;
