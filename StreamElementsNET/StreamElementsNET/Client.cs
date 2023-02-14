@@ -187,7 +187,7 @@ namespace StreamElementsNET
             var provider = eventPayload["provider"]?.ToString() ?? string.Empty;
             if (provider != "twitch") { return;}
 
-            var eventType = eventPayload["type"]?.ToString();
+            var eventType = eventPayload["type"]?.ToString() ?? string.Empty;
             var eventData = eventPayload["data"];
             
             switch (eventType)
