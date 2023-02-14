@@ -1,4 +1,5 @@
 ﻿using System;
+using StreamElementsNET;
 
 namespace StreamElements.Test
 {
@@ -6,7 +7,8 @@ namespace StreamElements.Test
     {
         static void Main(string[] args)
         {
-            var streamElements = new StreamElementsNET.Client("<JWT-TOKEN>");
+            var token = "<JWT-TOKEN>";
+            var streamElements = new Client();
 
             streamElements.OnConnected += StreamElements_OnConnected;
             streamElements.OnAuthenticated += StreamElements_OnAuthenticated;
@@ -15,11 +17,13 @@ namespace StreamElements.Test
             streamElements.OnHost += StreamElements_OnHost;
             streamElements.OnTip += StreamElements_OnTip;
             streamElements.OnCheer += StreamElements_OnCheer;
+            streamElements.OnStoreRedemption += StreamElements_OnStoreRedemption;
             streamElements.OnAuthenticationFailure += StreamElements_OnAuthenticationFailure;
             streamElements.OnReceivedRawMessage += StreamElements_OnReceivedRawMessage;
             streamElements.OnSent += StreamElements_OnSent;
+            streamElements.OnUnknownSimpleUpdate += StreamElements_OnUnknown;
 
-            streamElements.Connect();
+            streamElements.Connect(token);
 
             while (true) ;
         }
@@ -72,6 +76,16 @@ namespace StreamElements.Test
         private static void StreamElements_OnConnected(object sender, EventArgs e)
         {
             Console.WriteLine($"Connected!");
+        }
+        
+        private static void StreamElements_OnStoreRedemption(object sender, StreamElementsNET.Models.Store.StoreRedemption e)
+        {
+            Console.WriteLine($"Store redemption: store item {e.StoreItemName} by {e.Username} with message {e.Message}");
+        }
+
+        private static void StreamElements_OnUnknown(object sender, StreamElementsNET.Models.Unknown.UnknownEventArgs e)
+        {
+            Console.WriteLine($"Unknown event args: {e.Type} - {e.Data}");
         }
     }
 }
