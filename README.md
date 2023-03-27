@@ -60,7 +60,7 @@ C# library for reading event data from StreamElements. Events include tips, subs
 
 ### Usage
 ```
-var streamElements = new StreamElementsNET.Client("<JWT-TOKEN>");
+var streamElements = new StreamElementsNET.Client();
 
 streamElements.OnConnected += StreamElements_OnConnected;
 streamElements.OnAuthenticated += StreamElements_OnAuthenticated;
@@ -73,7 +73,7 @@ streamElements.OnAuthenticationFailure += StreamElements_OnAuthenticationFailure
 streamElements.OnReceivedRawMessage += StreamElements_OnReceivedRawMessage;
 streamElements.OnSent += StreamElements_OnSent;
 
-streamElements.Connect();
+streamElements.Connect("<JWT-TOKEN>");
 ```
 
 ### Testing
