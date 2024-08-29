@@ -2,18 +2,17 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="WebSocket4Net" Version="0.15.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="StreamElementsNET">
-      <HintPath>..\..\StreamElementsNET\bin\Debug\netcoreapp2.1\StreamElementsNET.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\..\StreamElementsNET\StreamElementsNET.csproj" />
   </ItemGroup>
-
+  
 </Project>

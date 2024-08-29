@@ -11,7 +11,7 @@ namespace StreamElementsNET
         private readonly string StreamElementsUrl = "wss://realtime.streamelements.com/socket.io/?cluster=main&EIO=3&transport=websocket";
 
         private WebSocket client;
-        protected string jwt;
+        private string token;
         private Timer pingTimer;
 
         public event EventHandler OnConnected;
@@ -77,15 +77,16 @@ namespace StreamElementsNET
         public event EventHandler<Models.Subscriber.SubscriberNewLatest> OnSubscriberNewLatest;
         public event EventHandler<Models.Subscriber.SubscriberAlltimeGifter> OnSubscriberAlltimeGifter;
         public event EventHandler<Models.Subscriber.SubscriberGiftedLatest> OnSubscriberGiftedLatest;
+        
+        // store
+        public event EventHandler<Models.Store.StoreRedemption> OnStoreRedemption;
 
         // unknowns
         public event EventHandler<UnknownEventArgs> OnUnknownComplexObject;
         public event EventHandler<UnknownEventArgs> OnUnknownSimpleUpdate;
 
-        public Client(string jwtToken)
+        public Client()
         {
-            jwt = jwtToken;
-
             client = new WebSocket(StreamElementsUrl);
             client.Opened += Client_Opened;
             client.Error += Client_Error;
@@ -93,8 +94,9 @@ namespace StreamElementsNET
             client.MessageReceived += Client_MessageReceived;
         }
 
-        public void Connect()
+        public void Connect(string jwt)
         {
+            token = jwt;
             client.Open();
         }
 
@@ -116,7 +118,7 @@ namespace StreamElementsNET
 
         private void handleAuthentication()
         {
-            send($"42[\"authenticate\",{{\"method\":\"jwt\",\"token\":\"{jwt}\"}}]");
+            send($"42[\"authenticate\",{{\"method\":\"jwt\",\"token\":\"{token}\"}}]");
         }
 
         private void handlePingInitialization(Models.Internal.SessionMetadata md)
@@ -176,33 +178,37 @@ namespace StreamElementsNET
 
         private void handleComplexObject(JArray decoded)
         {
-            // only handle "event" types
-            if (decoded[0].ToString() != "event")
-                return;
-            // only handle follows from twitch
-            if (decoded[1]["provider"].ToString() != "twitch")
-                return;
+            var objectType = decoded[0]?.ToString() ?? string.Empty;
+            if (objectType != "event") { return; }
 
-            var type = decoded[1]["type"].ToString();
-            switch (type)
+            var eventPayload = decoded[1];
+            if(eventPayload == null) { return; }
+            
+            var provider = eventPayload["provider"]?.ToString() ?? string.Empty;
+            if (provider != "twitch") { return;}
+
+            var eventType = eventPayload["type"]?.ToString() ?? string.Empty;
+            var eventData = eventPayload["data"];
+            
+            switch (eventType)
             {
                 case "follow":
-                    OnFollower?.Invoke(client, Parsing.Follower.handleFollower(decoded[1]["data"]));
+                    OnFollower?.Invoke(client, Parsing.Follower.handleFollower(eventData));
                     return;
                 case "cheer":
-                    OnCheer?.Invoke(client, Parsing.Cheer.handleCheer(decoded[1]["data"]));
+                    OnCheer?.Invoke(client, Parsing.Cheer.handleCheer(eventData));
                     return;
                 case "host":
-                    OnHost?.Invoke(client, Parsing.Host.handleHost(decoded[1]["data"]));
+                    OnHost?.Invoke(client, Parsing.Host.handleHost(eventData));
                     return;
                 case "tip":
-                    OnTip?.Invoke(client, Parsing.Tip.handleTip(decoded[1]["data"]));
+                    OnTip?.Invoke(client, Parsing.Tip.handleTip(eventData));
                     return;
                 case "subscriber":
-                    OnSubscriber?.Invoke(client, Parsing.Subscriber.handleSubscriber(decoded[1]["data"]));
+                    OnSubscriber?.Invoke(client, Parsing.Subscriber.handleSubscriber(eventData));
                     return;
                 default:
-                    OnUnknownComplexObject?.Invoke(client, new UnknownEventArgs(type, decoded[1]["data"]));
+                    OnUnknownComplexObject?.Invoke(client, new UnknownEventArgs(eventType, eventData));
                     return;
             }
         }
@@ -212,9 +218,12 @@ namespace StreamElementsNET
             // only handle "event:update" types
             if (decoded[0].ToString() != "event:update")
                 return;
+
+            var eventPayload = decoded[1];
+            if(eventPayload == null) { return; }
             
-            var data = decoded[1]["data"];
-            var type = decoded[1]["name"].ToString();
+            var data = eventPayload["data"];
+            var type = eventPayload["name"]?.ToString() ?? string.Empty;
             
             switch (type)
             {
@@ -334,6 +343,9 @@ namespace StreamElementsNET
                     return;
                 case "subscriber-gifted-latest":
                     OnSubscriberGiftedLatest?.Invoke(client, Parsing.Subscriber.handleSubscriberGiftedLatest(data));
+                    return;
+                case "redemption-latest":
+                    OnStoreRedemption?.Invoke(client, Parsing.StoreRedemption.handleStoreRedemption(data));
                     return;
                 default:
                     OnUnknownSimpleUpdate?.Invoke(client, new UnknownEventArgs(type, decoded[1]["data"]));
