@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Timers;
+using StreamElementsNET.Models.Unknown;
 using WebSocket4Net;
 
 namespace StreamElementsNET
@@ -10,7 +11,7 @@ namespace StreamElementsNET
         private readonly string StreamElementsUrl = "wss://realtime.streamelements.com/socket.io/?cluster=main&EIO=3&transport=websocket";
 
         private WebSocket client;
-        private string jwt;
+        protected string jwt;
         private Timer pingTimer;
 
         public event EventHandler OnConnected;
@@ -78,8 +79,8 @@ namespace StreamElementsNET
         public event EventHandler<Models.Subscriber.SubscriberGiftedLatest> OnSubscriberGiftedLatest;
 
         // unknowns
-        public event EventHandler<string> OnUnknownComplexObject;
-        public event EventHandler<string> OnUnknownSimpleUpdate;
+        public event EventHandler<UnknownEventArgs> OnUnknownComplexObject;
+        public event EventHandler<UnknownEventArgs> OnUnknownSimpleUpdate;
 
         public Client(string jwtToken)
         {
@@ -181,7 +182,9 @@ namespace StreamElementsNET
             // only handle follows from twitch
             if (decoded[1]["provider"].ToString() != "twitch")
                 return;
-            switch (decoded[1]["type"].ToString())
+
+            var type = decoded[1]["type"].ToString();
+            switch (type)
             {
                 case "follow":
                     OnFollower?.Invoke(client, Parsing.Follower.handleFollower(decoded[1]["data"]));
@@ -199,7 +202,7 @@ namespace StreamElementsNET
                     OnSubscriber?.Invoke(client, Parsing.Subscriber.handleSubscriber(decoded[1]["data"]));
                     return;
                 default:
-                    OnUnknownComplexObject?.Invoke(client, decoded[1]["type"].ToString());
+                    OnUnknownComplexObject?.Invoke(client, new UnknownEventArgs(type, decoded[1]["data"]));
                     return;
             }
         }
@@ -209,8 +212,11 @@ namespace StreamElementsNET
             // only handle "event:update" types
             if (decoded[0].ToString() != "event:update")
                 return;
+            
             var data = decoded[1]["data"];
-            switch (decoded[1]["name"].ToString())
+            var type = decoded[1]["name"].ToString();
+            
+            switch (type)
             {
                 case "follower-latest":
                     OnFollowerLatest?.Invoke(client, Parsing.Follower.handleFollowerLatest(data));
@@ -330,7 +336,7 @@ namespace StreamElementsNET
                     OnSubscriberGiftedLatest?.Invoke(client, Parsing.Subscriber.handleSubscriberGiftedLatest(data));
                     return;
                 default:
-                    OnUnknownSimpleUpdate?.Invoke(client, decoded[1]["name"].ToString());
+                    OnUnknownSimpleUpdate?.Invoke(client, new UnknownEventArgs(type, decoded[1]["data"]));
                     return;
             }
         }
